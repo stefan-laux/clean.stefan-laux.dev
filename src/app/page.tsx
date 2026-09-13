@@ -168,7 +168,13 @@ export default function Home() {
             <div className="flow-arrow" aria-hidden="true"><Icon name="arrow" size={17} /></div>
 
             <section className="editor output-editor" aria-labelledby="output-label">
-              <div className="editor-heading"><div><span className="step">02</span><h2 id="output-label">Clean text</h2></div><span className={`output-status ${result.text ? "ready" : ""}`}>{result.text ? <><Icon name="check" size={14} /> Ready to copy</> : "PLAIN & SIMPLE"}</span></div>
+              <div className="editor-heading">
+                <div><span className="step">02</span><h2 id="output-label">Clean text</h2></div>
+                <button className={`copy-button ${copied ? "is-copied" : ""}`} onClick={copy} disabled={!result.text} aria-label={copied ? "Copied!" : "Copy clean text"}>
+                  <Icon name={copied ? "check" : "copy"} size={15} />
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
               <div className={`output-body ${result.text ? "has-text" : ""}`}>
                 {result.text ? <div className="clean-output" ref={outputRef} role="textbox" aria-readonly="true" aria-multiline="true" aria-labelledby="output-label" tabIndex={0} onCopy={copySelection}>{highlight ? highlightedText() : result.text}</div> : <div className="empty-output"><span className="empty-icon"><Icon name="spark" size={27} /></span><h3>A fresh start for your text.</h3><p>Your clean version appears here<br />as soon as you start typing.</p><span className="empty-caption">Same words. A clean slate.</span></div>}
               </div>
@@ -176,7 +182,7 @@ export default function Home() {
             </section>
           </div>
 
-          <div className="workspace-bottom"><div className="cleanup-summary"><span className="summary-icon"><Icon name="check" size={16} /></span><div><strong>{input ? (result.formattingRemoved || result.invisibleRemoved || result.spacesNormalized ? "A little lighter. All yours." : "Already looking clean.") : "Formatting goes. Your words stay."}</strong><p>{input ? `${result.invisibleRemoved} invisible character${result.invisibleRemoved === 1 ? "" : "s"} removed · ${result.spacesNormalized} space${result.spacesNormalized === 1 ? "" : "s"} normalized${result.formattingRemoved ? " · Markup removed" : ""}` : "No fonts, colors, or rich-text clipboard data."}</p></div></div><button className={`copy-button ${copied ? "is-copied" : ""}`} onClick={copy} disabled={!result.text}><Icon name={copied ? "check" : "copy"} size={18} />{copied ? "Copied!" : "Copy clean text"}</button></div>
+          <div className="workspace-bottom"><div className="cleanup-summary"><span className="summary-icon"><Icon name="check" size={16} /></span><div><strong>{input ? (result.formattingRemoved || result.invisibleRemoved || result.spacesNormalized ? "A little lighter. All yours." : "Already looking clean.") : "Formatting goes. Your words stay."}</strong><p>{input ? `${result.invisibleRemoved} invisible character${result.invisibleRemoved === 1 ? "" : "s"} removed · ${result.spacesNormalized} space${result.spacesNormalized === 1 ? "" : "s"} normalized${result.formattingRemoved ? " · Markup removed" : ""}` : "No fonts, colors, or rich-text clipboard data."}</p></div></div><span className={`output-status ${result.text ? "ready" : ""}`}>{result.text ? <><Icon name="check" size={14} /> Ready to copy</> : "PLAIN & SIMPLE"}</span></div>
         </section>
 
         <section className={`review-panel ${highlight ? "enabled" : ""}`} aria-labelledby="review-title">

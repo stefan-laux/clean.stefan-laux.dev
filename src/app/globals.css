@@ -51,7 +51,8 @@ h1 span { color: #7e8a9a; }
 .editor-heading label, .editor-heading h2 { font-size: .9375rem; font-weight: 600; margin: 0; }
 .step { color: #7b899c; font-family: monospace; font-size: .75rem; letter-spacing: .5px; }
 .input-actions { display: flex; align-items: center; gap: 8px; }
-.small-button, .icon-button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: white; font-size: .875rem; }
+.small-button, .icon-button, .copy-button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: white; font-size: .875rem; }
+.small-button, .copy-button { width: 5.5rem; flex-shrink: 0; }
 .small-button:hover, .icon-button:hover { background: #f1f5fb; }
 .icon-button { padding: 9px; border-color: transparent; color: var(--muted); }
 .output-status { font-size: .75rem; letter-spacing: .7px; color: #7e8a9a; white-space: nowrap; }
@@ -75,7 +76,7 @@ textarea:focus { box-shadow: inset 3px 0 0 #305cf4; }
 .summary-icon { color: #778c9a; display: grid; place-items: center; width: 29px; height: 29px; background: #f0f4f7; border-radius: 50%; flex-shrink: 0; }
 .cleanup-summary strong { font-size: .875rem; font-weight: 500; }
 .cleanup-summary p { font-size: .75rem; color: #7c899b; margin: 5px 0 0; line-height: 1.5; }
-.copy-button { min-height: 44px; min-width: 182px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--blue); border-radius: 8px; background: var(--blue); color: white; font-size: .875rem; font-weight: 500; padding: 12px 20px; flex-shrink: 0; box-shadow: 0 3px 4px #305cf414; }
+.copy-button { border-color: var(--blue); background: var(--blue); color: white; box-shadow: 0 3px 4px #305cf414; }
 .copy-button:hover:not(:disabled) { background: var(--blue-dark); }
 .copy-button.is-copied { background: #257354; border-color: #257354; }
 .review-panel { border: 1px solid #e0e5ed; border-radius: 12px; margin-top: 22px; padding: 23px 26px; background: #f8fafe; }
@@ -146,7 +147,6 @@ textarea:focus { box-shadow: inset 3px 0 0 #305cf4; }
   .flow-arrow { display: none; }
   .editor-footer { padding: 14px 18px; }
   .workspace-bottom { padding: 18px; flex-direction: column; align-items: stretch; gap: 18px; }
-  .copy-button { width: 100%; min-height: 46px; }
   .review-panel { padding: 19px 18px; margin-top: 18px; }
   .review-top { flex-direction: column; gap: 16px; }
   .review-heading { gap: 11px; }
