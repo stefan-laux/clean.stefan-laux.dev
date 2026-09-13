@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { characterGroups, cleanText, countWords, findCharacters } from "@/lib/clean-text";
+import type { WebMCPDocument } from "@/lib/webmcp";
 
 function Icon({ name, size = 18 }: { name: "copy" | "paste" | "arrow" | "check" | "shield" | "close" | "spark"; size?: number }) {
   const paths: Record<string, ReactNode> = {
@@ -38,6 +40,39 @@ export default function Home() {
   const charCount = useMemo(() => Array.from(result.text).length, [result.text]);
 
   useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  useEffect(() => {
+    const context = (document as WebMCPDocument).modelContext;
+    if (!context?.registerTool) return;
+    const lifecycle = new AbortController();
+    const tool = {
+      name: "prepare_clean_text",
+      title: "Prepare clean text",
+      description: "Put text into the cleaner and show its plain-text result. Does not copy to the clipboard, save, or upload the text.",
+      inputSchema: { type: "object", properties: { text: { type: "string" }, stripFormatting: { type: "boolean" }, highlightCharacters: { type: "boolean" } }, required: ["text"], additionalProperties: false },
+      annotations: { readOnlyHint: false, untrustedContentHint: true },
+      execute(value: unknown) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Expected an object containing text.");
+        const data = value as Record<string, unknown>;
+        if (typeof data.text !== "string" || Object.keys(data).some((key) => !["text", "stripFormatting", "highlightCharacters"].includes(key)) || (data.stripFormatting !== undefined && typeof data.stripFormatting !== "boolean") || (data.highlightCharacters !== undefined && typeof data.highlightCharacters !== "boolean")) throw new Error("Text must be a string and options must be booleans.");
+        const text = data.text;
+        const strip = data.stripFormatting !== false;
+        const cleaned = cleanText(text, strip);
+        flushSync(() => {
+          copyVersion.current++;
+          if (copyTimer.current) clearTimeout(copyTimer.current);
+          setCopied(false);
+          setNotice("");
+          setInput(text);
+          setRemoveFormatting(strip);
+          setHighlight(data.highlightCharacters !== false);
+        });
+        return { ...cleaned, highlightedCharacters: findCharacters(cleaned.text).length };
+      },
+    };
+    try { void Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {}); } catch { /* Optional browser capability. */ }
+    return () => lifecycle.abort();
+  }, []);
 
   function resetFeedback() {
     copyVersion.current++;
@@ -76,6 +111,7 @@ export default function Home() {
       const selection = window.getSelection();
       const range = document.createRange();
       if (outputRef.current && selection) {
+        outputRef.current.focus();
         range.selectNodeContents(outputRef.current);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -140,7 +176,7 @@ export default function Home() {
             </section>
           </div>
 
-          <div className="workspace-bottom"><div className="cleanup-summary"><span className="summary-icon"><Icon name="check" size={16} /></span><div><strong>{input ? (result.formattingRemoved || result.invisibleRemoved || result.spacesNormalized ? "A little lighter. All yours." : "Already looking clean.") : "Formatting goes. Your words stay."}</strong><p>{input ? `${result.invisibleRemoved} invisible characters removed · ${result.spacesNormalized} spaces normalized${result.formattingRemoved ? " · Markup removed" : ""}` : "No fonts, colors, or rich-text clipboard data."}</p></div></div><button className={`copy-button ${copied ? "is-copied" : ""}`} onClick={copy} disabled={!result.text}><Icon name={copied ? "check" : "copy"} size={18} />{copied ? "Copied!" : "Copy clean text"}</button></div>
+          <div className="workspace-bottom"><div className="cleanup-summary"><span className="summary-icon"><Icon name="check" size={16} /></span><div><strong>{input ? (result.formattingRemoved || result.invisibleRemoved || result.spacesNormalized ? "A little lighter. All yours." : "Already looking clean.") : "Formatting goes. Your words stay."}</strong><p>{input ? `${result.invisibleRemoved} invisible character${result.invisibleRemoved === 1 ? "" : "s"} removed · ${result.spacesNormalized} space${result.spacesNormalized === 1 ? "" : "s"} normalized${result.formattingRemoved ? " · Markup removed" : ""}` : "No fonts, colors, or rich-text clipboard data."}</p></div></div><button className={`copy-button ${copied ? "is-copied" : ""}`} onClick={copy} disabled={!result.text}><Icon name={copied ? "check" : "copy"} size={18} />{copied ? "Copied!" : "Copy clean text"}</button></div>
         </section>
 
         <section className={`review-panel ${highlight ? "enabled" : ""}`} aria-labelledby="review-title">

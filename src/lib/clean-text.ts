@@ -17,9 +17,13 @@ function htmlToText(html: string): string {
     if (node.tagName === "br") return "\n";
     if (node.tagName === "img") return node.attrs.find((a) => a.name === "alt")?.value ?? "";
     const text = node.childNodes.map(read).join("");
+    if (node.tagName === "td" || node.tagName === "th") return `${text}\t`;
+    if (node.tagName === "tr") return `\n${text.replace(/\t$/, "")}\n`;
     return blockTags.has(node.tagName) ? `\n${text}\n` : text;
   }
-  return parseFragment(html).childNodes.map(read).join("").replace(/\n{3,}/g, "\n\n").replace(/^\n|\n$/g, "");
+  const text = parseFragment(html).childNodes.map(read).join("").replace(/\n{3,}/g, "\n\n");
+  return /<(?:address|article|aside|blockquote|div|dl|h[1-6]|li|p|pre|section|table|tr|ul|ol)\b/i.test(html)
+    ? text.replace(/^\n|\n$/g, "") : text;
 }
 
 function markdownToText(source: string): string {
@@ -47,7 +51,15 @@ function markdownToText(source: string): string {
         }
         return result + source.slice(cursor);
       }
-      default: return "children" in node ? node.children.map(render).join("") : "";
+      default: {
+        if (!("children" in node)) return "";
+        // Parse inline HTML together so <br> keeps a line break and a complete
+        // <script> / hidden element is removed together with its contents.
+        if (node.children.some((child) => child.type === "html")) {
+          return htmlToText(node.children.map((child) => child.type === "html" ? child.value : render(child).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")).join(""));
+        }
+        return node.children.map(render).join("");
+      }
     }
   }
   return render(tree);
@@ -57,7 +69,7 @@ export function cleanText(input: string, removeFormatting = true) {
   let invisibleRemoved = 0;
   let spacesNormalized = 0;
   // ZWJ/ZWNJ, variation selectors, emoji tags, and directional controls can carry meaning.
-  const normalized = input.replace(/\r\n?/g, "\n")
+  const normalize = (value: string) => value.replace(/\r\n?/g, "\n")
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u00AD\u200B\u2060\uFEFF]/g, () => {
       invisibleRemoved++;
       return "";
@@ -66,8 +78,11 @@ export function cleanText(input: string, removeFormatting = true) {
       spacesNormalized++;
       return " ";
     });
-  const text = removeFormatting ? markdownToText(normalized) : normalized;
-  return { text, invisibleRemoved, spacesNormalized, formattingRemoved: text !== normalized };
+  const normalized = normalize(input);
+  const unformatted = removeFormatting ? markdownToText(normalized) : normalized;
+  // Entities in HTML/Markdown can decode into invisible or nonbreaking characters.
+  const text = normalize(unformatted);
+  return { text, invisibleRemoved, spacesNormalized, formattingRemoved: unformatted !== normalized };
 }
 
 export const characterGroups = [
